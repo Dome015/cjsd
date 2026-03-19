@@ -43,7 +43,7 @@ typedef struct {
     bool success;
     union {
         cjsd_value_t value;
-        char* error;
+        char error[256];
     } result;
 } cjsd_parse_result_t;
 
@@ -136,11 +136,9 @@ static bool parse_string(const char** p, char** out, int* line, int* col) {
 static cjsd_parse_result_t parse_value(const char** p, int* line, int* col);
 
 static cjsd_parse_result_t parse_array(const char** p, int* line, int* col) {
-    cjsd_parse_result_t res = {false, {.error = NULL}};
+    cjsd_parse_result_t res = {false};
     if (**p != '[') {
-        char err[256];
-        sprintf(err, "Expected '[' at line %d, column %d", *line, *col);
-        res.result.error = strdup(err);
+        snprintf(res.result.error, sizeof(res.result.error), "Expected '[' at line %d, column %d", *line, *col);
         return res;
     }
     (*p)++;
@@ -162,17 +160,13 @@ static cjsd_parse_result_t parse_array(const char** p, int* line, int* col) {
             skip_whitespace(p, line, col);
         } else if (**p != ']') {
             cjsd_free_value(&arr);
-            char err[256];
-            sprintf(err, "Expected ',' or ']' at line %d, column %d", *line, *col);
-            res.result.error = strdup(err);
+            snprintf(res.result.error, sizeof(res.result.error), "Expected ',' or ']' at line %d, column %d", *line, *col);
             return res;
         }
     }
     if (**p != ']') {
         cjsd_free_value(&arr);
-        char err[256];
-        sprintf(err, "Expected ']' at line %d, column %d", *line, *col);
-        res.result.error = strdup(err);
+        snprintf(res.result.error, sizeof(res.result.error), "Expected ']' at line %d, column %d", *line, *col);
         return res;
     }
     (*p)++;
@@ -183,11 +177,9 @@ static cjsd_parse_result_t parse_array(const char** p, int* line, int* col) {
 }
 
 static cjsd_parse_result_t parse_object(const char** p, int* line, int* col) {
-    cjsd_parse_result_t res = {false, {.error = NULL}};
+    cjsd_parse_result_t res = {false};
     if (**p != '{') {
-        char err[256];
-        sprintf(err, "Expected '{' at line %d, column %d", *line, *col);
-        res.result.error = strdup(err);
+        snprintf(res.result.error, sizeof(res.result.error), "Expected '{' at line %d, column %d", *line, *col);
         return res;
     }
     (*p)++;
@@ -198,18 +190,14 @@ static cjsd_parse_result_t parse_object(const char** p, int* line, int* col) {
         char* key;
         if (!parse_string(p, &key, line, col)) {
             cjsd_free_value(&obj);
-            char err[256];
-            sprintf(err, "Expected string key at line %d, column %d", *line, *col);
-            res.result.error = strdup(err);
+            snprintf(res.result.error, sizeof(res.result.error), "Expected string key at line %d, column %d", *line, *col);
             return res;
         }
         skip_whitespace(p, line, col);
         if (**p != ':') {
             free(key);
             cjsd_free_value(&obj);
-            char err[256];
-            sprintf(err, "Expected ':' after key at line %d, column %d", *line, *col);
-            res.result.error = strdup(err);
+            snprintf(res.result.error, sizeof(res.result.error), "Expected ':' after key at line %d, column %d", *line, *col);
             return res;
         }
         (*p)++;
@@ -231,17 +219,13 @@ static cjsd_parse_result_t parse_object(const char** p, int* line, int* col) {
             skip_whitespace(p, line, col);
         } else if (**p != '}') {
             cjsd_free_value(&obj);
-            char err[256];
-            sprintf(err, "Expected ',' or '}' at line %d, column %d", *line, *col);
-            res.result.error = strdup(err);
+            snprintf(res.result.error, sizeof(res.result.error), "Expected ',' or '}' at line %d, column %d", *line, *col);
             return res;
         }
     }
     if (**p != '}') {
         cjsd_free_value(&obj);
-        char err[256];
-        sprintf(err, "Expected '}' at line %d, column %d", *line, *col);
-        res.result.error = strdup(err);
+        snprintf(res.result.error, sizeof(res.result.error), "Expected '}' at line %d, column %d", *line, *col);
         return res;
     }
     (*p)++;
@@ -253,11 +237,9 @@ static cjsd_parse_result_t parse_object(const char** p, int* line, int* col) {
 
 static cjsd_parse_result_t parse_value(const char** p, int* line, int* col) {
     skip_whitespace(p, line, col);
-    cjsd_parse_result_t res = {false, {.error = NULL}};
+    cjsd_parse_result_t res = {false};
     if (!**p) {
-        char err[256];
-        sprintf(err, "Unexpected end of input at line %d, column %d", *line, *col);
-        res.result.error = strdup(err);
+        snprintf(res.result.error, sizeof(res.result.error), "Unexpected end of input at line %d, column %d", *line, *col);
         return res;
     }
     if (**p == 'n' && strncmp(*p, "null", 4) == 0) {
@@ -284,9 +266,7 @@ static cjsd_parse_result_t parse_value(const char** p, int* line, int* col) {
     if (**p == '"') {
         char* str;
         if (!parse_string(p, &str, line, col)) {
-            char err[256];
-            sprintf(err, "Invalid string at line %d, column %d", *line, *col);
-            res.result.error = strdup(err);
+            snprintf(res.result.error, sizeof(res.result.error), "Invalid string at line %d, column %d", *line, *col);
             return res;
         }
         res.success = true;
@@ -305,9 +285,7 @@ static cjsd_parse_result_t parse_value(const char** p, int* line, int* col) {
         char* end;
         double num = strtod(*p, &end);
         if (end == *p) {
-            char err[256];
-            sprintf(err, "Invalid number at line %d, column %d", *line, *col);
-            res.result.error = strdup(err);
+            snprintf(res.result.error, sizeof(res.result.error), "Invalid number at line %d, column %d", *line, *col);
             return res;
         }
         *p = end;
@@ -324,9 +302,7 @@ static cjsd_parse_result_t parse_value(const char** p, int* line, int* col) {
         res.result.value = cjsd_number(num);
         return res;
     }
-    char err[256];
-    sprintf(err, "Unexpected character '%c' at line %d, column %d", **p, *line, *col);
-    res.result.error = strdup(err);
+    snprintf(res.result.error, sizeof(res.result.error), "Unexpected character '%c' at line %d, column %d", **p, *line, *col);
     return res;
 }
 
@@ -339,9 +315,7 @@ cjsd_parse_result_t cjsd_parse(const char* json_str) {
         if (*p) {
             cjsd_free_value(&res.result.value);
             res.success = false;
-            char err[256];
-            sprintf(err, "Extra characters after JSON at line %d, column %d", line, col);
-            res.result.error = strdup(err);
+            snprintf(res.result.error, sizeof(res.result.error), "Extra characters after JSON at line %d, column %d", line, col);
         }
     }
     return res;
@@ -349,15 +323,26 @@ cjsd_parse_result_t cjsd_parse(const char* json_str) {
 
 static void serialize_value(const cjsd_value_t* value, char** buf, size_t* len, size_t* cap) {
     char temp[256];
+    size_t tlen;
     switch (value->type) {
         case CJSD_NULL:
-            strcpy(temp, "null");
+            strncpy(temp, "null", sizeof(temp)-1);
+            temp[sizeof(temp)-1] = '\0';
+            tlen = 4;
             break;
         case CJSD_BOOL:
-            strcpy(temp, value->data.boolean ? "true" : "false");
+            if (value->data.boolean) {
+                strncpy(temp, "true", sizeof(temp)-1);
+                tlen = 4;
+            } else {
+                strncpy(temp, "false", sizeof(temp)-1);
+                tlen = 5;
+            }
+            temp[sizeof(temp)-1] = '\0';
             break;
         case CJSD_NUMBER:
-            sprintf(temp, "%.17g", value->data.number);
+            snprintf(temp, sizeof(temp), "%.17g", value->data.number);
+            tlen = strlen(temp);
             break;
         case CJSD_STRING: {
             size_t slen = strlen(value->data.string);
@@ -449,12 +434,12 @@ static void serialize_value(const cjsd_value_t* value, char** buf, size_t* len, 
             (*buf)[(*len)++] = '}';
             return;
     }
-    size_t tlen = strlen(temp);
+    tlen = strlen(temp);
     if (*len + tlen >= *cap) {
         *cap = (*len + tlen) * 2;
         *buf = realloc(*buf, *cap);
     }
-    strcpy(*buf + *len, temp);
+    strncpy(*buf + *len, temp, tlen);
     *len += tlen;
 }
 

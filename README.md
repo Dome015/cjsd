@@ -186,7 +186,6 @@ Parsing can fail due to malformed JSON. Always check the result:
 cjsd_parse_result_t res = cjsd_parse("invalid json");
 if (!res.success) {
     printf("Error: %s\n", res.result.error);
-    free(res.result.error);
 } else {
     // Use res.result.value
     cjsd_free_value(&res.result.value);
@@ -195,11 +194,7 @@ if (!res.success) {
 
 ## Notes
 
-- All strings are heap-allocated and must be freed
+- Serialized strings are heap-allocated and must be freed with `cjsd_free_string()`
 - The functional approach means frequent copying - not optimized for performance
 - Supports standard JSON types but not comments or trailing commas
 - Thread-safe as long as you don't share values between threads
-
-## License
-
-This library is public domain. Use as you wish.
