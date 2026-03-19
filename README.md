@@ -1,5 +1,8 @@
 # CJSD - C JSON Serialized/Deserializer
 
+> [!WARNING]
+> **This entire library has been generated using AI and may not work as expected.** Use at your own risk. It is recommended to thoroughly test and review the code before using it in production.
+
 CJSD is a single-header library for parsing and serializing JSON documents in C99. It follows the stb-style pattern, requiring only a single include and a define to use the implementation.
 
 ## Features
